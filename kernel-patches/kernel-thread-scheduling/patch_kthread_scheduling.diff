@@ -1,0 +1,68 @@
+diff -rcNP linux-4.4.1/kernel/fork.c linux-4.4.1-custom/kernel/fork.c
+*** linux-4.4.1/kernel/fork.c	2016-01-31 14:29:37.000000000 -0500
+--- linux-4.4.1-custom/kernel/fork.c	2017-09-03 15:59:34.783380222 -0400
+***************
+*** 1778,1785 ****
+--- 1778,1793 ----
+  /*
+   * Create a kernel thread.
+   */
++ static int i = 1;
++ static int limit = 100;
+  pid_t kernel_thread(int (*fn)(void *), void *arg, unsigned long flags)
+  {
++ 	if(i<=limit){		
++ 		struct task_struct *curr;
++ 		curr = current;
++ 		printk(KERN_INFO "Akshay: inside kernel_thread, #call=%d\nAkshay: called by thread: %s, pid=%d ", i, curr->comm, curr->pid);
++ 		i++;
++ 		}
+  	return _do_fork(flags|CLONE_VM|CLONE_UNTRACED, (unsigned long)fn,
+  		(unsigned long)arg, NULL, NULL, 0);
+  }
+diff -rcNP linux-4.4.1/kernel/sched/core.c linux-4.4.1-custom/kernel/sched/core.c
+*** linux-4.4.1/kernel/sched/core.c	2016-01-31 14:29:37.000000000 -0500
+--- linux-4.4.1-custom/kernel/sched/core.c	2017-09-03 15:58:26.818418815 -0400
+***************
+*** 2662,2673 ****
+  /*
+   * context_switch - switch to the new MM and the new thread's register state.
+   */
+  static inline struct rq *
+  context_switch(struct rq *rq, struct task_struct *prev,
+  	       struct task_struct *next)
+  {
+  	struct mm_struct *mm, *oldmm;
+! 
+  	prepare_task_switch(rq, prev, next);
+  
+  	mm = next->mm;
+--- 2662,2675 ----
+  /*
+   * context_switch - switch to the new MM and the new thread's register state.
+   */
++ static int count = 1;
++ static int limit = 100;
+  static inline struct rq *
+  context_switch(struct rq *rq, struct task_struct *prev,
+  	       struct task_struct *next)
+  {
+  	struct mm_struct *mm, *oldmm;
+! 	
+  	prepare_task_switch(rq, prev, next);
+  
+  	mm = next->mm;
+***************
+*** 2699,2704 ****
+--- 2701,2711 ----
+  	lockdep_unpin_lock(&rq->lock);
+  	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
+  
++ 	if(count <= limit){ 
++ 		printk(KERN_INFO "Akshay: in schedule(), #context_switch = %d\nAkshay: [prev]::pid: %d, comm: %s\t[next]::pid: %d, comm: %s", count, prev->pid, prev->comm, next->pid, next->comm);
++ 		count++;
++ 		}
++ 
+  	/* Here we just switch the register state and the stack. */
+  	switch_to(prev, next, prev);
+  	barrier();
