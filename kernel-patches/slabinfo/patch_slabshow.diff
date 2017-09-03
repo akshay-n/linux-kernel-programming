@@ -1,0 +1,75 @@
+diff -rcNP linux-4.4.1/init/main.c linux-4.4.1-custom/init/main.c
+*** linux-4.4.1/init/main.c	2016-01-31 14:29:37.000000000 -0500
+--- linux-4.4.1-custom/init/main.c	2017-09-03 12:16:04.344284216 -0400
+***************
+*** 88,93 ****
+--- 88,95 ----
+  #include <asm/sections.h>
+  #include <asm/cacheflush.h>
+  
++ #include <../init/myslab_show.h>
++ 
+  static int kernel_init(void *);
+  
+  extern void init_IRQ(void);
+***************
+*** 401,406 ****
+--- 403,410 ----
+  	kthreadd_task = find_task_by_pid_ns(pid, &init_pid_ns);
+  	rcu_read_unlock();
+  	complete(&kthreadd_done);
++ 	
++ 	slab_show();
+  
+  	/*
+  	 * The boot idle thread must execute schedule()
+diff -rcNP linux-4.4.1/init/Makefile linux-4.4.1-custom/init/Makefile
+*** linux-4.4.1/init/Makefile	2016-01-31 14:29:37.000000000 -0500
+--- linux-4.4.1-custom/init/Makefile	2017-09-03 12:09:43.861820952 -0400
+***************
+*** 2,8 ****
+  # Makefile for the linux kernel.
+  #
+  
+! obj-y                          := main.o version.o mounts.o
+  ifneq ($(CONFIG_BLK_DEV_INITRD),y)
+  obj-y                          += noinitramfs.o
+  else
+--- 2,8 ----
+  # Makefile for the linux kernel.
+  #
+  
+! obj-y                          := main.o version.o mounts.o myslab_show.o
+  ifneq ($(CONFIG_BLK_DEV_INITRD),y)
+  obj-y                          += noinitramfs.o
+  else
+diff -rcNP linux-4.4.1/init/myslab_show.c linux-4.4.1-custom/init/myslab_show.c
+*** linux-4.4.1/init/myslab_show.c	1969-12-31 19:00:00.000000000 -0500
+--- linux-4.4.1-custom/init/myslab_show.c	2016-03-05 00:03:27.487904000 -0500
+***************
+*** 0 ****
+--- 1,16 ----
++ #include <linux/kernel.h>
++ #include <linux/mm.h>
++ #include <linux/slab.h>
++ #include <linux/slub_def.h>
++ #include <../mm/slab.h>
++ #include <../init/myslab_show.h>
++ 
++ void slab_show(){
++ 	struct kmem_cache *s;
++ 	struct slabinfo sinfo;
++ 	printk(KERN_INFO "# name            <active_objs> <num_objs> <objsize> <objperslab> <pagesperslab> : slabdata <active_slabs> <num_slabs> ");
++ 	list_for_each_entry(s, &slab_caches, list){
++ 		get_slabinfo(s, &sinfo);
++ 		printk(KERN_INFO "%-17s %6lu %6lu %6u %4u %4d : slabdata %6lu %6lu", cache_name(s), sinfo.active_objs, sinfo.num_objs, s->size, sinfo.objects_per_slab, (1 << sinfo.cache_order), sinfo.active_slabs, sinfo.num_slabs);
++ 	}
++ }
+diff -rcNP linux-4.4.1/init/myslab_show.h linux-4.4.1-custom/init/myslab_show.h
+*** linux-4.4.1/init/myslab_show.h	1969-12-31 19:00:00.000000000 -0500
+--- linux-4.4.1-custom/init/myslab_show.h	2016-02-28 01:06:09.670519000 -0500
+***************
+*** 0 ****
+--- 1 ----
++ void slab_show(void);
+\ No newline at end of file
